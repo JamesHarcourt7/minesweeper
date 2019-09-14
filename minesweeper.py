@@ -39,7 +39,7 @@ class Tile:
                         current = connected.pop(0)
                         visited.append(current)
                         for a in current.get_adjacents():
-                            if a not in visited:
+                            if a not in visited and not a.clicked:
                                 if not a.mine and not a.numbered:
                                     a.clicked = True
                                     connected.append(a)
@@ -238,7 +238,12 @@ class Game:
             else:
                 found = returned
 
-            if found == self.mines:
+            w = 0
+            for t in self.grid.tiles.values():
+                if t.warned:
+                    w += 1
+
+            if found == self.mines and found == w:
                 self.win()
                 self.running = False
 
