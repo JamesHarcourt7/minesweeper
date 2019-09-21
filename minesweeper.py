@@ -1,5 +1,6 @@
 import pygame
 import random
+from datetime import date
 
 LEFT = 1
 RIGHT = 3
@@ -32,6 +33,7 @@ class Tile:
         if left:
             if self.rect.collidepoint(left):
                 self.clicked = True
+                self.warned = False
                 if not self.numbered and not self.mine:
                     connected = [self]
                     visited = []
@@ -202,28 +204,41 @@ class Grid:
 
 class Game:
 
-    def __init__(self, screen, mines=20):
+    def __init__(self, screen, database, user, dimensions=(15, 15), size=30, mines=20):
         self.screen = screen
+        self.database = database
+        self.user = user
         self.mines = mines
         self.running = True
         width = self.screen.get_width() // 2
         height = self.screen.get_height() // 2
-        self.grid = Grid(self.screen, (15, 15), 30, (width, height))
+        self.grid = Grid(self.screen, dimensions, size, (width, height))
         self.clock = pygame.time.Clock()
+        self.time = 0
 
     def run(self):
         self.grid.add_mines(self.mines)
         self.grid.assign_text()
 
+        title = pygame.image.load('ms_title.png').convert_alpha()
+        title = pygame.transform.scale(title, (350, 50))
+        y = ((self.screen.get_height() - (self.grid.height * self.grid.tile_size)) // 2) - 50
+        title_pos = (250, y)
+
         found = 0
+        timer = TextBox((750, 35), (175, 40), '', (0, 0, 0), 20, (255, 255, 255))
 
         while self.running:
             dt = self.clock.get_time() / 1000
+            self.time += dt
+            template = str(self.user) + ', {:8.2f}s'
+            timer.update(template.format(self.time, 2))
             left_pos = None
             right_pos = None
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     self.running = False
+                    return 'quit'
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     if event.button == LEFT:
                         left_pos = pygame.mouse.get_pos()
@@ -233,10 +248,14 @@ class Game:
             self.screen.fill((200, 200, 200))
             returned = self.grid.update(left_pos, right_pos, found)
             if returned == 'lose':
-                self.lose()
+                returned = self.lose()
                 self.running = False
+                return returned
             else:
                 found = returned
+
+            timer.draw(self.screen)
+            self.screen.blit(title, title_pos)
 
             w = 0
             for t in self.grid.tiles.values():
@@ -244,17 +263,18 @@ class Game:
                     w += 1
 
             if found == self.mines and found == w:
-                self.win()
+                returned = self.win()
                 self.running = False
+                return returned
 
             pygame.display.flip()
             self.clock.tick(60)
 
     def win(self):
-        m1 = TextBox((self.screen.get_width() // 2, self.screen.get_height() //2),
-                          (600, 100), 'You Win!', (0, 0, 0), 30, (0, 255, 0))
-        m2 = TextBox((self.screen.get_width() // 2, self.screen.get_height() //2 + 150),
-                          (600, 100), 'Press ENTER to quit.', (0, 0, 0), 20, (0, 255, 0))
+        m1 = TextBox((self.screen.get_width() // 2, self.screen.get_height() // 2),
+                     (600, 100), 'You Win!', (0, 0, 0), 30, (0, 255, 0))
+        m2 = TextBox((self.screen.get_width() // 2, self.screen.get_height() // 2 + 150),
+                     (600, 100), 'Press ENTER to quit.', (0, 0, 0), 20, (0, 255, 0))
         messages = [m1, m2]
 
         done = False
@@ -274,11 +294,18 @@ class Game:
 
             pygame.display.flip()
 
+        if self.database:
+            self.database.add_score(self.user, round(self.time, 2), date.today().strftime('%d/%m/%Y'), self.grid.width)
+
+        table = ('scores', self.grid.width)
+
+        return table
+
     def lose(self):
-        m1 = TextBox((self.screen.get_width() // 2, self.screen.get_height() //2),
-                          (600, 100), 'You Lose!', (0, 0, 0), 30, (255, 0, 0))
-        m2 = TextBox((self.screen.get_width() // 2, self.screen.get_height() //2 + 150),
-                          (600, 100), 'Press ENTER to quit.', (0, 0, 0), 20, (255, 0, 0))
+        m1 = TextBox((self.screen.get_width() // 2, self.screen.get_height() // 2),
+                     (600, 100), 'You Lose!', (0, 0, 0), 30, (255, 0, 0))
+        m2 = TextBox((self.screen.get_width() // 2, self.screen.get_height() // 2 + 150),
+                     (600, 100), 'Press ENTER to quit.', (0, 0, 0), 20, (255, 0, 0))
         messages = [m1, m2]
 
         done = False
@@ -297,6 +324,8 @@ class Game:
                 m.draw(self.screen)
 
             pygame.display.flip()
+
+        return 'start'
 
 
 class TextBox:
@@ -322,10 +351,14 @@ class TextBox:
         self.image.blit(self.text_image, self.text_rect)
         screen.blit(self.image, self.rect)
 
+    def update(self, new_text):
+        self.text = new_text
+        self.text_image = self.font.render(self.text, 1, self.t_colour)
+
 
 if __name__ == '__main__':
     pygame.init()
     display = pygame.display.set_mode((800, 600))
-    g = Game(display)
+    g = Game(display, None, 'test', (30, 30), 18, 100)
     g.run()
     pygame.quit()
