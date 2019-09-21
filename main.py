@@ -9,7 +9,7 @@ class Main:
         pygame.init()
         self.display = pygame.display.set_mode((850, 650))
         pygame.display.set_caption('Mine Sweeper')
-        icon = pygame.image.load('Minesweeper/img/mine.png')
+        icon = pygame.image.load('mine.png')
         pygame.display.set_icon(icon)
         self.running = True
         self.signed_in = False
@@ -45,7 +45,7 @@ class Main:
         message = TextBox((425, 320), (600, 50), 'Enter a nickname (3 characters min):', (0, 0, 0), 25,
                           (150, 150, 150))
 
-        title = pygame.image.load('Minesweeper/img/ms_title.png').convert_alpha()
+        title = pygame.image.load('ms_title.png').convert_alpha()
         title = pygame.transform.scale(title, (600, 80))
         title_pos = (125, 50)
 
