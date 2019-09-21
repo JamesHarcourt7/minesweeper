@@ -220,7 +220,7 @@ class Game:
         self.grid.add_mines(self.mines)
         self.grid.assign_text()
 
-        title = pygame.image.load('Minesweeper/img/ms_title.png').convert_alpha()
+        title = pygame.image.load('ms_title.png').convert_alpha()
         title = pygame.transform.scale(title, (350, 50))
         y = ((self.screen.get_height() - (self.grid.height * self.grid.tile_size)) // 2) - 50
         title_pos = (250, y)
