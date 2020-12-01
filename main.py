@@ -1,3 +1,9 @@
+# James Harcourt 19/07/2019
+# 
+# Edit [01/12/2020]: An older project thats been moved to this updated GitHub account.
+# Minesweeper but coded using Pygame (Not the best library or language for the job, but it made for a good quick project.
+
+
 import pygame
 import ms_database
 import minesweeper
@@ -6,6 +12,7 @@ import minesweeper
 class Main:
 
     def __init__(self):
+        # Initialise pygame and create display.
         pygame.init()
         self.display = pygame.display.set_mode((850, 650))
         pygame.display.set_caption('Mine Sweeper')
@@ -13,7 +20,8 @@ class Main:
         pygame.display.set_icon(icon)
         self.running = True
         self.signed_in = False
-
+        
+        # Initialise custom Database object.
         d = ms_database.Database()
         self.user = ''
         self.get_name()
@@ -23,8 +31,11 @@ class Main:
         self.g20 = Loader(self.display, d, self.user, (20, 20), 25, 40)
         self.g30 = Loader(self.display, d, self.user, (30, 30), 18, 80)
         self.scores = Scores(self.display, d)
+        
+        # Screens are stored using a dictionary, and the object references can be retrieved and used from string keys returned in the mainloop.
         self.screen_dict = {'start': self.start, '15': self.g15, '20': self.g20, '30': self.g30, 'scores': self.scores}
-
+        
+        # Set the start screen as the first to be displayed.
         self.current_screen = self.start
 
     def run(self):
@@ -34,21 +45,28 @@ class Main:
                 self.running = False
             elif returned:
                 try:
+                    # Use the return string from the last screen to retrieve the next via the dictionary screen_dict.
                     self.current_screen = self.screen_dict[returned]
                 except KeyError:
+                    # Some returns are to pass data to other screens, which causes a KeyError that has to be caught and handled (not entirely sure why).
                     self.current_screen = self.screen_dict[returned[0]]
                     self.current_screen.pass_information(returned[1])
 
     def get_name(self):
+        # Method will present a prompt for the user to enter details so the program can find them in the database or create their "account".
+        
+        # Create media such as Buttons, TextInputs and TextBoxes.
         button = Button((425, 500), (100, 50), 'Enter', (0, 0, 0), 20, (200, 200, 200), (150, 150, 150), self.begin)
         input_box = TextInput((425, 400), (300, 50), (0, 0, 0), 20, (200, 200, 200), (150, 150, 150), 'user')
         message = TextBox((425, 320), (600, 50), 'Enter a nickname (3 characters min):', (0, 0, 0), 25,
                           (150, 150, 150))
-
+        
+        # Create title image instance to display later.
         title = pygame.image.load('ms_title.png').convert_alpha()
         title = pygame.transform.scale(title, (600, 80))
         title_pos = (125, 50)
-
+        
+        # Loop until the user has signed in.
         while not self.signed_in:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -79,6 +97,7 @@ class Main:
             pygame.display.flip()
 
     def process(self, returned):
+        # ??? Poor design ???
         if not returned:
             return
         if returned[0] == 'user':
@@ -88,8 +107,10 @@ class Main:
         if len(self.user) >= 3:
             self.signed_in = True
 
-
+            
 class Screen:
+    
+    # Screen object contains all attributes required for a display and event loop functionality.
 
     def __init__(self, screen, database, colour=(255, 255, 255)):
         self.screen = screen
@@ -104,7 +125,9 @@ class Screen:
         self.colour = colour
 
     def run(self):
+        # Main loop
         while self.running:
+            # Event loop - check for user input and other events (such as closed window).
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     self.running = False
@@ -144,10 +167,13 @@ class Screen:
             pygame.display.flip()
 
     def process(self, returned):
+        # Method will be overridden later.
         pass
 
 
 class Start(Screen):
+    
+    # Inherits/Extends Screen
 
     def __init__(self, screen, database):
         Screen.__init__(self, screen, database)
@@ -159,6 +185,8 @@ class Start(Screen):
 
         self.buttons = [b15, b20, b30, quit_button]
 
+    # Call back functions for determining which option the user selected.
+    
     def b15(self):
         return '15'
 
@@ -173,6 +201,8 @@ class Start(Screen):
 
 
 class Scores(Screen):
+    
+    # Inherits/Extends Screen
 
     def __init__(self, screen, database):
         Screen.__init__(self, screen, database)
@@ -186,6 +216,7 @@ class Scores(Screen):
         self.buttons = [back_button]
 
     def run(self):
+        # Create ScoreBoard object if information is present to create one. Display Leaderboard information to the user.
         if self.information:
             self.scoreboard = ScoreBoard((400, 300), (600, 400), ['No.', 'Name', 'Time', 'Date'],
                                          self.database, 1, self.information)
@@ -218,10 +249,12 @@ class Scores(Screen):
         self.information = returned
 
     def up(self):
+        # Scroll up
         if self.scoreboard:
             self.scoreboard.move_up()
 
     def down(self):
+        # Scroll down
         if self.scoreboard:
             self.scoreboard.move_down()
 
@@ -230,6 +263,9 @@ class Scores(Screen):
 
 
 class Loader:
+    
+    # Loader class instantiates the main game with all necessary parameters.
+    # In hindsight, perhaps slightly redundant.
 
     def __init__(self, screen, database, user, dimensions, size, mines):
         self.screen = screen
@@ -246,6 +282,8 @@ class Loader:
 
 
 class Button:
+    
+    # Button class allows user to click and perform actions within the user interface.
 
     def __init__(self, position, dimensions, text, t_colour, font_size, active, inactive, func):
         self.position = position
@@ -287,6 +325,8 @@ class Button:
 
 
 class TextInput:
+    
+    # TextInput allows the user to enter text in order to get information such as name.
 
     def __init__(self, position, dimensions, t_colour, font_size, active, inactive, process):
         self.position = position
@@ -363,6 +403,8 @@ class TextInput:
 
 
 class TextBox:
+    
+    # TextBox object displays text to the user.
 
     def __init__(self, position, dimensions, text, t_colour, font_size, colour):
         self.position = position
@@ -391,6 +433,9 @@ class TextBox:
 
 
 class ScoreBoard:
+    
+    # ScoreBoard object allows user to see previous high scores and who earned them on the database stored in the local filesystem.
+    # Can accomodate many rows as user can scroll up and down using scroll buttons.
 
     def __init__(self, position, dimensions, fields, database, index, table):
         self.position = position
@@ -421,6 +466,7 @@ class ScoreBoard:
 
     def make_columns(self):
         scores = self.db.return_scores(self.table)
+        # Sort the scores list by fastest time.
         score_list = sorted(scores, key=lambda x: x[self.index])
 
         width_space = self.dimensions[0] / len(self.fields)
@@ -437,8 +483,9 @@ class ScoreBoard:
 
     def draw(self, screen):
         screen.blit(self.image, self.rect)
-
+    
     def update(self, screen):
+        # Draw scoreboard to the display.
         self.image.fill((0, 0, 0))
         for h in self.headers:
             h.draw(self.image)
@@ -448,16 +495,19 @@ class ScoreBoard:
         self.draw(screen)
 
     def move_down(self):
+        # Scroll down but only to the last page of rows.
         if self.multiplier < self.limit:
             self.multiplier += 1
             self.assign_to_box()
 
     def move_up(self):
+        # Scroll up but only to the first page of rows.
         if self.multiplier > 0:
             self.multiplier -= 1
             self.assign_to_box()
-
+    
     def assign_to_box(self):
+        # Assign data to each row of the scoreboard base on scroll position and information retrieved from database.
         for i in range(len(self.fields)):
             column = self.columns[i]
             for j in range(10):
